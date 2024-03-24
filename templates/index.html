@@ -1,0 +1,146 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+<title>Chat Client</title>
+<script src="https://unpkg.com/react@17/umd/react.development.js"></script>
+<script src="https://unpkg.com/react-dom@17/umd/react-dom.development.js"></script>
+<script src="https://unpkg.com/socket.io-client@4/dist/socket.io.js"></script>
+<style>
+body {
+font-family: Arial, sans-serif;
+}
+
+.chat-container {
+display: flex;
+flex-direction: column;
+height: 100vh;
+}
+
+.chat-header {
+padding: 10px;
+background-color: #eee;
+border-bottom: 1px solid #ccc;
+}
+
+.chat-body {
+flex: 1;
+overflow-y: auto;
+}
+
+.chat-form {
+padding: 10px;
+border-top: 1px solid #ccc;
+}
+
+.message {
+margin-bottom: 10px;
+padding: 10px;
+border: 1px solid #ccc;
+border-radius: 5px;
+}
+
+.message-username {
+font-weight: bold;
+}
+
+.message-text {
+font-size: 14px;
+}
+
+.user-list {
+padding: 10px;
+background-color: #f5f5f5;
+border: 1px solid #ccc;
+border-radius: 5px;
+height: 100%;
+}
+
+.user-list-item {
+padding: 5px;
+border-bottom: 1px solid #ccc;
+}
+</style>
+</head>
+<body>
+<div class="chat-container">
+<div class="chat-header">
+<h1>Chat Client</h1>
+</div>
+<div class="chat-body" id="chat-body">
+<div id="messages"></div>
+</div>
+<div class="chat-form">
+<input type="text" id="message-input" placeholder="Enter a message">
+<button type="submit" id="send-message-button">Send</button>
+</div>
+</div>
+<div class="user-list" id="user-list"></div>
+<script>
+const socket = io();
+
+const messages = document.getElementById('messages');
+const messageInput = document.getElementById('message-input');
+const sendMessageButton = document.getElementById('send-message-button');
+const userList = document.getElementById('user-list');
+
+socket.on('connect', () => {
+console.log('Connected to the server');
+});
+
+socket.on('disconnect', () => {
+console.log('Disconnected from the server');
+});
+
+socket.on('message', (data) => {
+const message = document.createElement('div');
+message.classList.add('message');
+
+const messageUsername = document.createElement('span');
+messageUsername.classList.add('message-username');
+messageUsername.textContent = data.username + ': ';
+
+const messageText = document.createElement('span');
+messageText.classList.add('message-text');
+messageText.textContent = data.message;
+
+message.appendChild(messageUsername);
+message.appendChild(messageText);
+
+messages.appendChild(message);
+messages.scrollTop = messages.scrollHeight;
+});
+
+socket.on('user_connected', (data) => {
+const userListItem = document.createElement('li');
+userListItem.classList.add('user-list-item');
+userListItem.textContent = data.username;
+
+userList.appendChild(userListItem);
+});
+
+socket.on('user_disconnected', (data) => {
+const userListItem = document.querySelector(`#user-list li[textContent="${data.username}"]`);
+userListItem.parentNode.removeChild(userListItem);
+});
+
+sendMessageButton.addEventListener('click', (event) => {
+event.preventDefault();
+
+if (messageInput.value.trim() === '') {
+return;
+}
+
+const message = {
+message: messageInput.value,
+username: 'User'
+};
+
+socket.emit('message', message);
+
+messageInput.value = '';
+});
+</script>
+</body>
+</html>
+
